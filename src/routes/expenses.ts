@@ -14,7 +14,8 @@ const fakeExpenses: Expense[] = [
   { id: 3, title: "Software Licenses", amount: 150 },
 ];
 
-const createPostSchema = z.object({
+const expenseSchema = z.object({
+  id: z.number().int().positive().min(1, "ID must be a positive integer"),
   title: z.string().min(3).max(100),
   amount: z
     .number()
@@ -22,6 +23,10 @@ const createPostSchema = z.object({
     .positive()
     .min(0, "Amount must be a positive number"),
 });
+
+type ExpenseSchema = z.infer<typeof expenseSchema>;
+
+const createPostSchema = expenseSchema.omit({ id: true });
 
 export const expensesRoute = new Hono()
   .get("/", async (c) => {
