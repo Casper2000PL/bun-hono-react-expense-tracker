@@ -7,7 +7,7 @@ export const Route = createRootRoute({
 
 function NavBar() {
   return (
-    <div className="p-2 flex gap-2">
+    <div className="p-4 flex gap-4">
       <Link to="/" className="[&.active]:font-bold">
         Home
       </Link>{" "}
