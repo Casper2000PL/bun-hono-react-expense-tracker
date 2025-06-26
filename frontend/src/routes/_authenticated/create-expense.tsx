@@ -72,7 +72,7 @@ function CreateExpense() {
                 value={field.state.value}
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.value)}
-                type="number"
+                type="text"
                 placeholder="Enter amount"
                 className="w-fit"
               />

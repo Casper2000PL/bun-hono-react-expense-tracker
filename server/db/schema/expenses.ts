@@ -1,16 +1,24 @@
-import { serial, text, pgSchema, numeric, index } from "drizzle-orm/pg-core";
+import {
+  serial,
+  text,
+  numeric,
+  index,
+  pgTable,
+  timestamp,
+} from "drizzle-orm/pg-core";
 
-export const expenses = pgSchema("expenses").table(
+export const expenses = pgTable(
   "expenses",
   {
     id: serial("id").primaryKey(),
     userId: text("user_id").notNull(),
     title: text("title").notNull(),
     amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
   },
   (expenses) => {
     return {
-      userId: index("name_idx").on(expenses.userId),
+      userIdIndex: index("name_idx").on(expenses.userId),
     };
   }
 );
