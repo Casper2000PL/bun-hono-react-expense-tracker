@@ -2,28 +2,23 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { getUser } from "server/kinde";
-
-type Expense = {
-  id: number;
-  title: string;
-  amount: number;
-};
-
-const fakeExpenses: Expense[] = [
-  { id: 1, title: "Office Supplies", amount: 100 },
-  { id: 2, title: "Travel Expenses", amount: 200 },
-  { id: 3, title: "Software Licenses", amount: 150 },
-];
+import { db } from "../db";
+import { expenses as expensesTable } from "../db/schema/expenses";
+import { eq } from "drizzle-orm";
 
 const expenseSchema = z.object({
   id: z.number().int().positive().min(1, "ID must be a positive integer"),
   title: z.string().min(3).max(100),
-  amount: z
-    .number()
-    .int()
-    .positive()
-    .min(0, "Amount must be a positive number"),
+  amount: z.string(),
 });
+
+type Expense = z.infer<typeof expenseSchema>;
+
+const fakeExpenses: Expense[] = [
+  { id: 1, title: "Office Supplies", amount: "100" },
+  { id: 2, title: "Travel Expenses", amount: "200" },
+  { id: 3, title: "Software Licenses", amount: "150" },
+];
 
 type ExpenseSchema = z.infer<typeof expenseSchema>;
 
@@ -32,16 +27,26 @@ const createPostSchema = expenseSchema.omit({ id: true });
 export const expensesRoute = new Hono()
   .get("/", getUser, async (c) => {
     const user = c.var.user;
-    return c.json({ expenses: fakeExpenses });
+
+    const expenses = await db
+      .select()
+      .from(expensesTable)
+      .where(eq(expensesTable.userId, user.id));
+
+    return c.json({ expenses: expenses });
   })
   .post("/", getUser, zValidator("json", createPostSchema), async (c) => {
     const expense = await c.req.valid("json");
+    const user = c.var.user;
 
-    fakeExpenses.push({
-      id: fakeExpenses.length + 1,
-      title: expense.title,
-      amount: expense.amount,
-    });
+    const result = db
+      .insert(expensesTable)
+      .values({
+        title: expense.title,
+        amount: expense.amount,
+        userId: user.id,
+      })
+      .returning();
 
     c.status(201);
 
@@ -49,7 +54,7 @@ export const expensesRoute = new Hono()
   })
   .get("/total-spent", getUser, async (c) => {
     const total = fakeExpenses.reduce(
-      (sum, expense) => sum + expense.amount,
+      (acc, expense) => acc + +expense.amount,
       0
     );
     return c.json({ total });
