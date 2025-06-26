@@ -23,9 +23,9 @@ export const authRoute = new Hono()
     return c.redirect(logoutUrl.toString());
   })
   .get("/me", getUser, async (c) => {
-    const user = c.get("user");
+    const user = c.var.user;
     if (!user) {
       return c.json({ error: "User not found" }, 404);
     }
-    return c.json(user);
+    return c.json({ user });
   });

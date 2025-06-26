@@ -6,10 +6,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { api } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 
-export const Route = createFileRoute("/")({
+import { api } from "@/lib/api";
+
+export const Route = createFileRoute("/_authenticated/")({
   component: Index,
 });
 
