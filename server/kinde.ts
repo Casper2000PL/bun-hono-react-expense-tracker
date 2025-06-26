@@ -2,9 +2,11 @@ import {
   createKindeServerClient,
   GrantType,
   type SessionManager,
+  type UserType,
 } from "@kinde-oss/kinde-typescript-sdk";
 import { type Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+import { createFactory, createMiddleware } from "hono/factory";
 
 // Client for authorization code flow
 export const kindeClient = createKindeServerClient(
@@ -16,20 +18,6 @@ export const kindeClient = createKindeServerClient(
     redirectURL: process.env.KINDE_REDIRECT_URI!,
     logoutRedirectURL: process.env.KINDE_LOGOUT_REDIRECT_URI!,
   }
-);
-
-console.log("Kinde client initialized with domain:", process.env.KINDE_DOMAIN);
-console.log(
-  "Kinde client initialized with client ID:",
-  process.env.KINDE_CLIENT_ID
-);
-console.log(
-  "Kinde client initialized with redirect URI:",
-  process.env.KINDE_REDIRECT_URI
-);
-console.log(
-  "Kinde client initialized with logout redirect URI:",
-  process.env.KINDE_LOGOUT_REDIRECT_URI
 );
 
 let store: Record<string, unknown> = {};
@@ -60,4 +48,28 @@ export const sessionManager = (c: Context): SessionManager => ({
       deleteCookie(c, key);
     });
   },
+});
+
+type Env = {
+  Variables: {
+    user: UserType;
+  };
+};
+
+export const getUser = createMiddleware<Env>(async (c, next) => {
+  try {
+    const isAuthenticated = await kindeClient.isAuthenticated(
+      sessionManager(c)
+    );
+    if (!isAuthenticated) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const user = await kindeClient.getUserProfile(sessionManager(c));
+    c.set("user", user);
+    await next();
+  } catch (error) {
+    console.error("Error getting user profile:", error);
+    return c.json({ error: "Internal Server Error" }, 500);
+  }
 });
