@@ -1,9 +1,12 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useForm } from "@tanstack/react-form";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
+import { useForm } from "@tanstack/react-form";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+// deprecated
+// import { zodValidator } from "@tanstack/zod-form-adapter";
+import { createExpenseSchema } from "../../../../server/sharedTypes";
 
 export const Route = createFileRoute("/_authenticated/create-expense")({
   component: CreateExpense,
@@ -39,6 +42,9 @@ function CreateExpense() {
         }}
       >
         <form.Field
+          validators={{
+            onChange: createExpenseSchema.shape.title,
+          }}
           name="title"
           children={(field) => (
             <>
@@ -55,11 +61,19 @@ function CreateExpense() {
                 placeholder="Enter expense title"
                 className="w-fit"
               />
+              {field.state.meta.errors.map((error) => (
+                <span key={error?.message} className="text-red-500">
+                  {error?.message}
+                </span>
+              ))}
             </>
           )}
         />
 
         <form.Field
+          validators={{
+            onChange: createExpenseSchema.shape.amount,
+          }}
           name="amount"
           children={(field) => (
             <>
@@ -76,6 +90,11 @@ function CreateExpense() {
                 placeholder="Enter amount"
                 className="w-fit"
               />
+              {field.state.meta.errors.map((error) => (
+                <span key={error?.message} className="text-red-500">
+                  {error?.message}
+                </span>
+              ))}
             </>
           )}
         />
