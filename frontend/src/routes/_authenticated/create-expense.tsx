@@ -7,6 +7,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 // deprecated
 // import { zodValidator } from "@tanstack/zod-form-adapter";
 import { createExpenseSchema } from "../../../../server/sharedTypes";
+import { Calendar } from "@/components/ui/calendar";
+import { useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/create-expense")({
   component: CreateExpense,
@@ -18,6 +20,7 @@ function CreateExpense() {
     defaultValues: {
       title: "",
       amount: "0",
+      date: new Date().toISOString(),
     },
     onSubmit: async ({ value }) => {
       const res = await api.expenses.$post({ json: value });
@@ -89,6 +92,30 @@ function CreateExpense() {
                 type="text"
                 placeholder="Enter amount"
                 className="w-fit"
+              />
+              {field.state.meta.errors.map((error) => (
+                <span key={error?.message} className="text-red-500">
+                  {error?.message}
+                </span>
+              ))}
+            </>
+          )}
+        />
+
+        <form.Field
+          validators={{
+            onChange: createExpenseSchema.shape.date,
+          }}
+          name="date"
+          children={(field) => (
+            <>
+              <Calendar
+                mode="single"
+                selected={new Date(field.state.value)}
+                onSelect={(date) =>
+                  field.handleChange((date ?? new Date()).toISOString())
+                }
+                className="rounded-md border"
               />
               {field.state.meta.errors.map((error) => (
                 <span key={error?.message} className="text-red-500">

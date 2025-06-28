@@ -1,9 +1,8 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import { z } from "zod";
 import { getUser } from "server/kinde";
 import { db } from "../db";
-import { expenses, expenses as expensesTable } from "../db/schema/expenses";
+import { expenses as expensesTable } from "../db/schema/expenses";
 import { desc, eq, sum } from "drizzle-orm";
 import { createExpenseSchema } from "server/sharedTypes";
 
@@ -21,23 +20,21 @@ export const expensesRoute = new Hono()
     return c.json({ expenses: expenses });
   })
   .post("/", getUser, zValidator("json", createExpenseSchema), async (c) => {
-    const expense = await c.req.valid("json");
+    const expense = c.req.valid("json");
     const user = c.var.user;
 
     const result = await db
       .insert(expensesTable)
       .values({
+        date: expense.date,
         title: expense.title,
         amount: expense.amount,
         userId: user.id,
       })
       .returning();
 
-    console.log("Inserting expense:", result);
-
     c.status(201);
-
-    return c.json(expense);
+    return c.json(result[0]);
   })
   .get("/total-spent", getUser, async (c) => {
     const user = c.var.user;

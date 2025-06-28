@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export const expenseSchema = z.object({
   id: z.number().int().positive().min(1, "ID must be a positive integer"),
@@ -7,6 +7,7 @@ export const expenseSchema = z.object({
     .string()
     .min(1, "Amount must be at least 1 character")
     .regex(/^\d+(\.\d{1,2})?$/, "Amount must be a valid number"),
+  date: z.string(),
 });
 
 export const createExpenseSchema = expenseSchema.omit({ id: true });
