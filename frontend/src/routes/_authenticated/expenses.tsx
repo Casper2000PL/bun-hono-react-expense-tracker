@@ -8,7 +8,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { api } from "@/lib/api";
+import {
+  getAllExpensesQueryOptions,
+  loadingCreateExpenseQueryOptions,
+} from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -16,20 +19,11 @@ export const Route = createFileRoute("/_authenticated/expenses")({
   component: Expenses,
 });
 
-async function getAllExpenses() {
-  const res = await api.expenses.$get();
-  if (!res.ok) {
-    throw new Error("Failed to fetch total spent");
-  }
-  const data = await res.json();
-  return data;
-}
-
 function Expenses() {
-  const { isPending, error, data, isFetching } = useQuery({
-    queryKey: ["get-all-expenses"],
-    queryFn: getAllExpenses,
-  });
+  const { data, error, isPending } = useQuery(getAllExpensesQueryOptions);
+  const { data: loadingCreateExpense } = useQuery(
+    loadingCreateExpenseQueryOptions
+  );
 
   if (error) {
     return (
@@ -42,6 +36,16 @@ function Expenses() {
       <Table>
         <TableCaption>A list of your recent expenses.</TableCaption>
         <TableHeader>
+          {loadingCreateExpense?.expense && (
+            <TableRow>
+              <TableCell className="font-medium">
+                <Skeleton className="h-4" />
+              </TableCell>
+              <TableCell>{loadingCreateExpense.expense.title}</TableCell>
+              <TableCell>{loadingCreateExpense.expense.amount}</TableCell>
+              <TableCell>{loadingCreateExpense.expense.date}</TableCell>
+            </TableRow>
+          )}
           <TableRow>
             <TableHead className="w-[100px]">Id</TableHead>
             <TableHead>Title</TableHead>
@@ -50,7 +54,7 @@ function Expenses() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {isPending || isFetching
+          {isPending
             ? Array(3)
                 .fill(0)
                 .map((_, i) => (

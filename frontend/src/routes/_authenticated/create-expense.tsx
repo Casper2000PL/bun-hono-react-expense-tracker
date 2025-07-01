@@ -1,20 +1,27 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { api } from "@/lib/api";
+import {
+  api,
+  createExpense,
+  getAllExpensesQueryOptions,
+  loadingCreateExpenseQueryOptions,
+} from "@/lib/api";
 import { useForm } from "@tanstack/react-form";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 // deprecated
 // import { zodValidator } from "@tanstack/zod-form-adapter";
-import { createExpenseSchema } from "../../../../server/sharedTypes";
 import { Calendar } from "@/components/ui/calendar";
-import { useState } from "react";
+import { createExpenseSchema } from "../../../../server/sharedTypes";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/create-expense")({
   component: CreateExpense,
 });
 
 function CreateExpense() {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const form = useForm({
     defaultValues: {
@@ -23,13 +30,36 @@ function CreateExpense() {
       date: new Date().toISOString(),
     },
     onSubmit: async ({ value }) => {
-      const res = await api.expenses.$post({ json: value });
-
-      if (!res.ok) {
-        throw new Error("Failed to create expense");
-      }
+      const existingExpenses = await queryClient.ensureQueryData(
+        getAllExpensesQueryOptions
+      );
 
       navigate({ to: "/expenses" });
+
+      queryClient.setQueryData(loadingCreateExpenseQueryOptions.queryKey, {
+        expense: value,
+      });
+
+      try {
+        const newExpense = await createExpense({ value });
+
+        queryClient.setQueryData(getAllExpensesQueryOptions.queryKey, {
+          ...existingExpenses,
+          expenses: [newExpense, ...existingExpenses.expenses],
+        });
+
+        toast("Expense has been created", {
+          description: `Successfully created a new expense ${newExpense.id}`,
+        });
+      } catch (error) {
+        console.error("Error creating expense:", error);
+        toast.error("Failed to create expense", {
+          description: "Please try again later.",
+        });
+        return;
+      } finally {
+        queryClient.setQueryData(loadingCreateExpenseQueryOptions.queryKey, {});
+      }
     },
   });
 

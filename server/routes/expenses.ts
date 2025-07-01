@@ -31,10 +31,13 @@ export const expensesRoute = new Hono()
         amount: expense.amount,
         userId: user.id,
       })
-      .returning();
+      .returning()
+      .then((res) => res[0]);
+
+    console.log("expenses.ts post method result: ", result);
 
     c.status(201);
-    return c.json(result[0]);
+    return c.json(result);
   })
   .get("/total-spent", getUser, async (c) => {
     const user = c.var.user;

@@ -11,3 +11,4 @@ export const expenseSchema = z.object({
 });
 
 export const createExpenseSchema = expenseSchema.omit({ id: true });
+export type CreateExpenseType = z.infer<typeof createExpenseSchema>;
